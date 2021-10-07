@@ -97,7 +97,7 @@ export function handleNewGauge(event: NewGauge): void {
     token.save()
 
     if (token.pool != null) {
-      let pool = Pool.load(token.pool)!
+      let pool = Pool.load(token.pool!)!
       gauge.pool = pool.id
     }
   }

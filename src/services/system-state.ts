@@ -21,5 +21,5 @@ export function getSystemState(event: ethereum.Event): SystemState {
   state.updatedAtBlock = event.block.number
   state.updatedAtTransaction = event.transaction.hash
 
-  return state!
+  return state
 }

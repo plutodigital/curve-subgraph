@@ -246,6 +246,10 @@ type Pool @entity {
   " List of gauge contracts associated with the pool "
   gauges: [Gauge!] @derivedFrom(field: "pool")
 
+  balanceHistory: [CoinBalance!] @derivedFrom(field: "pool")
+
+  totalBalanceHistory: [TotalBalance!] @derivedFrom(field: "pool")
+
   " Cumulative hourly trade volume "
   hourlyVolumes: [HourlyVolume!] @derivedFrom(field: "pool")
 
@@ -254,6 +258,12 @@ type Pool @entity {
 
   " Cumulative weekly trade volume "
   weeklyVolumes: [WeeklyVolume!] @derivedFrom(field: "pool")
+
+  dailyFeeCollected: [DailyFee!] @derivedFrom(field: "pool")
+
+  weeklyFeeCollected: [WeeklyFee!] @derivedFrom(field: "pool")
+
+  monthlyFeeCollected: [MonthlyFee!] @derivedFrom(field: "pool")
 }
 
 type Coin @entity {
@@ -277,6 +287,57 @@ type Coin @entity {
   updated: BigInt!
   updatedAtBlock: BigInt!
   updatedAtTransaction: Bytes!
+}
+
+type CoinBalance @entity {
+  " Equals to: <pool_id>-<coin_index>-<block_number> "
+  id: ID!
+  index: Int!
+  timestamp: BigInt!
+  date: String!
+  pool: Pool!
+  coin: Coin!
+  balance: BigDecimal!
+}
+
+type TotalBalance @entity {
+  " Equals to: <pool_id>-total-balance-<block_number> "
+  id: ID!
+  timestamp: BigInt!
+  date: String!
+  name: String!
+  pool: Pool!
+  balance: BigDecimal!
+}
+
+type DailyFee @entity {
+  " Equals to: <pool_id>-<coin_index>-<day>"
+  id: ID!
+  timestamp: BigInt!
+  date: String!
+  pool: Pool!
+  coin: Coin!
+  amount: BigDecimal!
+}
+
+type WeeklyFee @entity {
+  " Equals to: <pool_id>-<coin_index>-<week>"
+  id: ID!
+  timestamp: BigInt!
+  date: String!
+  pool: Pool!
+  coin: Coin!
+  amount: BigDecimal!
+}
+
+type MonthlyFee @entity {
+  " Equals to: <pool_id>-<coin_index>-<month>"
+  id: ID!
+  timestamp: BigInt!
+  date: String!
+  pool: Pool!
+  coin: Coin!
+  amount: BigDecimal!
 }
 
 type UnderlyingCoin @entity {

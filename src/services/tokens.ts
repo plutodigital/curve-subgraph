@@ -38,7 +38,7 @@ export function getOrCreateToken(address: Address, event: ethereum.Event): Token
     state.save()
   }
 
-  return token!
+  return token
 }
 
 export function getOrCreateLpToken(address: Address): LpToken {
@@ -56,7 +56,7 @@ export function getOrCreateLpToken(address: Address): LpToken {
     token.save()
   }
 
-  return token!
+  return token
 }
 
 function getTokenInfo(address: Address): TokenInfo {

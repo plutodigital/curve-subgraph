@@ -1,4 +1,4 @@
-import { Address, dataSource, ethereum } from '@graphprotocol/graph-ts'
+import { Address, BigDecimal, dataSource, ethereum } from '@graphprotocol/graph-ts'
 import { decimal, integer } from '@protofire/subgraph-toolkit'
 
 import { Registry } from '../../generated/templates/Pool/Registry'
@@ -31,11 +31,13 @@ import {
   Token,
   TransferOwnershipEvent,
   UnderlyingCoin,
+  CoinBalance
 } from '../../generated/schema'
 
 import { getOrRegisterAccount } from '../services/accounts'
 import { saveCoins } from '../services/pools/coins'
 import { getDailyTradeVolume, getHourlyTradeVolume, getWeeklyTradeVolume } from '../services/pools/volume'
+import { getDailyFee, getWeeklyFee, getMonthlyFee } from '../services/pools/fees'
 
 import { FEE_PRECISION } from '../constants'
 
@@ -183,6 +185,31 @@ export function handleTokenExchange(event: TokenExchange): void {
 
     pool.exchangeCount = integer.increment(pool.exchangeCount)
     pool.save()
+
+    // See https://github.com/curvefi/curve-contract/blob/master/contracts/pools/reth/StableSwapRETH.vy#L457-L464
+    // from the contract, the final tokenBought (dy') is calculated like this:
+    // dy_fee = dy * feeBasePoint
+    // dy' = (dy - dy_fee) * PRECISION /rates[y]
+    // based on this, we can calculate that 
+    // dy = dy'*rate[y]/(PRECISION * (1 - feeBasePoint))
+    // so fee = dy'*rate[y]/(PRECISION * (1 - feeBasePoint)) * feeBasePoint
+    // also need to minus the admin fee: fee = fee * (1 - adminFeeBasePoint)
+    let feeBasePoint = pool.fee! // this should be set already and it should be the fee for this block
+    let adminFeeBasePoint = pool.adminFee!
+    let rate = coinBought.rate
+    let fee = amountBought.times(rate).div(decimal.ONE.minus(feeBasePoint)).times(feeBasePoint).times(decimal.ONE.minus(adminFeeBasePoint))
+    
+    let dailyFee = getDailyFee(pool!, event.block.timestamp, coinBought)
+    dailyFee.amount = dailyFee.amount.plus(fee)
+    dailyFee.save()
+
+    let weeklyFee = getWeeklyFee(pool!, event.block.timestamp, coinBought)
+    weeklyFee.amount = weeklyFee.amount.plus(fee)
+    weeklyFee.save()
+
+    let monthlyFee = getMonthlyFee(pool!, event.block.timestamp, coinBought)
+    monthlyFee.amount = monthlyFee.amount.plus(fee)
+    monthlyFee.save()
   }
 }
 
@@ -378,7 +405,7 @@ function getEventId(event: ethereum.Event): string {
 
 function getPoolSnapshot(pool: Pool, event: ethereum.Event): Pool {
   if (pool != null) {
-    let poolAddress = pool.swapAddress as Address
+    let poolAddress = changetype<Address>(pool.swapAddress)
     let poolContract = StableSwap.bind(poolAddress)
 
     // Workaround needed because batch_set_pool_asset_type() doesn't emit events
@@ -388,7 +415,7 @@ function getPoolSnapshot(pool: Pool, event: ethereum.Event): Pool {
       if (pool.assetType == null) {
         let context = dataSource.context()
 
-        let registryAddress = context.getBytes('registry') as Address
+        let registryAddress = changetype<Address>(context.getBytes('registry'))
         let registryContract = Registry.bind(registryAddress)
 
         let assetType = registryContract.try_get_pool_asset_type(poolAddress)

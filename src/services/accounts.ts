@@ -12,5 +12,5 @@ export function getOrRegisterAccount(address: Bytes): Account {
     account.save()
   }
 
-  return account!
+  return account
 }

@@ -49,7 +49,7 @@ function getOrCreatePool(address: Address, event: ethereum.Event): Pool {
     pool.name = registryContract.get_pool_name(address)
 
     // Coin balances and underlying coin balances/rates
-    saveCoins(pool!, event)
+    saveCoins(pool, event)
 
     // TODO: Calculate pool locked value
     pool.locked = decimal.ZERO
@@ -66,7 +66,7 @@ function getOrCreatePool(address: Address, event: ethereum.Event): Pool {
 
       // Associate gauge to pool
       if (token.gauge != null) {
-        let gauge = Gauge.load(token.gauge)!
+        let gauge = Gauge.load(token.gauge!)!
         gauge.pool = pool.id
         gauge.save()
 
@@ -123,7 +123,7 @@ function getOrCreatePool(address: Address, event: ethereum.Event): Pool {
     PoolDataSource.createWithContext(address, context)
   }
 
-  return pool!
+  return pool
 }
 
 function removePool(address: Address, event: ethereum.Event): Pool {

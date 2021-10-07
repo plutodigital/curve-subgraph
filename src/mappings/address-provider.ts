@@ -51,5 +51,5 @@ function registerContract(id: BigInt, event: ethereum.Event): Contract {
 
   state.save()
 
-  return contract!
+  return contract
 }
